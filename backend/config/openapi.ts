@@ -23,5 +23,16 @@ export default defineConfig({
         },
       },
     },
+    // ApiResponse añade siempre contenido JSON, incluso para un 204. Esta
+    // respuesta se declara aquí para que el contrato tampoco tenga cuerpo.
+    paths: {
+      '/api/v1/tasks/{id}': {
+        delete: {
+          responses: {
+            '204': { description: 'La tarea se ha eliminado. Sin cuerpo de respuesta.' },
+          },
+        },
+      },
+    },
   },
 })

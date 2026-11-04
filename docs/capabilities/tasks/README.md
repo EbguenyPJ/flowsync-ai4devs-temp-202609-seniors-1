@@ -22,11 +22,14 @@ de `POST /api/v1/auth/login` o de `POST /api/v1/auth/signup`.
 | `GET /tasks` | `status` en query, opcional | [`TasksController.index`](../../../backend/app/controllers/tasks_controller.ts) | `200` · lista de tareas |
 | `POST /tasks` | `{ "title": "..." }` | [`TasksController.store`](../../../backend/app/controllers/tasks_controller.ts) | `201` · la tarea creada |
 | `GET /tasks/:id` | `today=AAAA-MM-DD` en query, **obligatorio** | [`TasksController.show`](../../../backend/app/controllers/tasks_controller.ts) | `200` · la tarea con vencimiento |
+| `DELETE /tasks/:id` | Sin cuerpo ni query obligatoria | [`TasksController.destroy`](../../../backend/app/controllers/tasks_controller.ts) | `204` · sin cuerpo; `404` si no existe |
 | `PATCH /tasks/:id/status` | `{ "status": "pending \| in_progress \| done" }` | [`TaskStatusesController.update`](../../../backend/app/controllers/task_statuses_controller.ts) | `200` · la tarea ya cambiada |
 | `PUT /tasks/:id/due-date` | `{ "dueDate": "AAAA-MM-DD" \| null, "today": "AAAA-MM-DD" }` | [`TaskDueDatesController.update`](../../../backend/app/controllers/task_due_dates_controller.ts) | `200` · la tarea con vencimiento |
 
-Toda respuesta va envuelta en `{ "data": ... }` por el serializer de
+Las respuestas con datos van envueltas en `{ "data": ... }` por el serializer de
 [`providers/api_provider.ts`](../../../backend/providers/api_provider.ts).
+El borrado elimina la tarea del espacio compartido y devuelve `204` sin cuerpo ni envoltorio.
+Cualquier cuenta autenticada puede borrar una tarea, aunque tenga otro responsable.
 
 ### Dos formas de tarea, no una
 
@@ -58,10 +61,12 @@ recorta a `id`, `fullName` e `initials` — nunca el email.
 
 ### El contrato, servido
 
-Las cinco operaciones están anotadas con los decoradores de `@foadonis/openapi` sobre los propios
+Las seis operaciones están anotadas con los decoradores de `@foadonis/openapi` sobre los propios
 controladores, así que el documento servido en **`/api.json`** (y la interfaz en `/api`) lleva el
 parámetro `status` con sus tres valores, el `today` obligatorio, los cuerpos de las escrituras y los
-códigos `200`/`201`/`401`/`404`/`422` de cada operación, cada uno con la forma de lo que devuelve.
+códigos `200`/`201`/`204`/`401`/`404`/`422` de cada operación. La respuesta `204` de borrado no tiene contenido.
+Esta respuesta se declara en [`config/openapi.ts`](../../../backend/config/openapi.ts), porque el
+decorador `ApiResponse` de la versión instalada añade contenido JSON incluso a los `204`.
 
 Las formas que se repiten viven en
 [`backend/app/openapi/schemas.ts`](../../../backend/app/openapi/schemas.ts) y se publican en
@@ -71,7 +76,8 @@ transformers: así el documento **no puede** enseñar el vencimiento en la lista
 
 Ese fichero es documentación, no validación: describe lo que los controladores ya hacen. Si cambia un
 transformer o un validador, se actualiza en el mismo commit. El documento se construye en cada
-petición y no hay fichero que generar; lo que se commitea es el diff de `.adonisjs/`.
+petición; además, `npm run openapi:generate` actualiza la copia versionada en
+[`docs/api/openapi.json`](../../api/openapi.json). Se commitean ese documento y el diff de `.adonisjs/`.
 
 ## Reglas de negocio: dónde vive cada una
 
@@ -125,9 +131,11 @@ node ace test --tests="el responsable llega con su nombre y sus iniciales"
 ```
 
 Los tests de esta capability están en
-[`backend/tests/functional/tasks/`](../../../backend/tests/functional/tasks/). **Hoy solo hay uno**,
-`assignee.spec.ts`, que cubre 3 de los 124 scenarios de la spec: los del requisito *Lo que cada tarea
-muestra de su responsable*. Todo lo demás está sin cubrir, así que el verde de la suite **no** es
+[`backend/tests/functional/tasks/`](../../../backend/tests/functional/tasks/). `assignee.spec.ts`
+cubre 3 de los 124 scenarios de la spec: los del requisito *Lo que cada tarea muestra de su
+responsable*. `destroy.spec.ts` comprueba el borrado con `204` sin cuerpo, que se conserve otra tarea,
+el `404` al repetirlo, el borrado por otra cuenta, el `401` sin sesión y el contrato OpenAPI sin
+contenido para el `204`. El resto de la spec sigue sin cubrir, así que el verde de la suite **no** es
 señal de que la capability cumpla su spec.
 
 Dos cosas que hay que saber antes de escribir un test aquí:

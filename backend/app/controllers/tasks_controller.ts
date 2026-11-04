@@ -173,4 +173,25 @@ export default class TasksController {
     response.status(201)
     return serialize(TaskTransformer.transform(task))
   }
+
+  @ApiOperation({
+    summary: 'Borrar una tarea',
+    description: 'Elimina la tarea del espacio compartido, sin comprobar quién es el responsable.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Falta el token o no es válido. No se elimina ninguna tarea.',
+    type: () => ErrorResponse,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'No existe ninguna tarea con ese identificador.',
+    type: () => ErrorResponse,
+  })
+  async destroy({ params, response }: HttpContext) {
+    const task = await Task.findOrFail(params.id)
+    await task.delete()
+
+    return response.noContent()
+  }
 }
