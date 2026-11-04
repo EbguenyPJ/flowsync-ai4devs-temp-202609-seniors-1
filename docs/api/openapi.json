@@ -288,8 +288,131 @@
       }
     }
   },
-  "openapi": "3.0.0",
   "paths": {
+    "/api/v1/tasks/{id}": {
+      "delete": {
+        "responses": {
+          "204": {
+            "description": "La tarea se ha eliminado. Sin cuerpo de respuesta."
+          },
+          "401": {
+            "description": "Falta el token o no es válido. No se elimina ninguna tarea.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe ninguna tarea con ese identificador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Borrar una tarea",
+        "description": "Elimina la tarea del espacio compartido, sin comprobar quién es el responsable.",
+        "tags": [
+          "Tasks"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Una tarea suelta, con su vencimiento resuelto",
+        "description": "Devuelve la tarea entera —fecha de vencimiento incluida, o su ausencia— con `isOverdue` ya resuelto contra el día que indique quien pregunta. No comprueba quién es el responsable: una tarea ajena llega igual que una propia, y mirarla no la cambia.",
+        "tags": [
+          "Tasks"
+        ],
+        "responses": {
+          "200": {
+            "description": "La tarea, con su fecha de vencimiento y su condición de vencida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o no es válido. No se devuelve ninguna tarea.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe ninguna tarea con ese identificador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Falta `today` o no es una fecha válida. No se devuelve ninguna tarea.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "today",
+            "required": true,
+            "example": "2026-08-27",
+            "description": "Día de referencia `AAAA-MM-DD` contra el que se decide el vencimiento. Obligatorio y sin valor por defecto: el sistema no sustituye el día que falte por el de su propio reloj.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api": {
       "get": {
         "summary": "Documentation UI",
@@ -505,83 +628,6 @@
         ]
       }
     },
-    "/api/v1/tasks/{id}": {
-      "get": {
-        "summary": "Una tarea suelta, con su vencimiento resuelto",
-        "description": "Devuelve la tarea entera —fecha de vencimiento incluida, o su ausencia— con `isOverdue` ya resuelto contra el día que indique quien pregunta. No comprueba quién es el responsable: una tarea ajena llega igual que una propia, y mirarla no la cambia.",
-        "tags": [
-          "Tasks"
-        ],
-        "responses": {
-          "200": {
-            "description": "La tarea, con su fecha de vencimiento y su condición de vencida.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TaskDetailResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Falta el token o no es válido. No se devuelve ninguna tarea.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No existe ninguna tarea con ese identificador.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Falta `today` o no es una fecha válida. No se devuelve ninguna tarea.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "parameters": [
-          {
-            "in": "query",
-            "name": "today",
-            "required": true,
-            "example": "2026-08-27",
-            "description": "Día de referencia `AAAA-MM-DD` contra el que se decide el vencimiento. Obligatorio y sin valor por defecto: el sistema no sustituye el día que falte por el de su propio reloj.",
-            "schema": {
-              "type": "string",
-              "format": "date"
-            }
-          },
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
     "/api/v1/tasks/{id}/status": {
       "patch": {
         "summary": "Cambiar el estado de una tarea",
@@ -732,5 +778,6 @@
         ]
       }
     }
-  }
+  },
+  "openapi": "3.0.0"
 }
